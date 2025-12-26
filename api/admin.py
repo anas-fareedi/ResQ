@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from models.database import get_db
 from models.rescue_report import RescueReport
-from services.validator import ReportValidator
+from ML.services.validator import ReportValidator
 from schemas.report_schemas import DashboardResponse, IncidentSummary, ReportResponse
 
 router = APIRouter(prefix="/admin", tags=["admin"])

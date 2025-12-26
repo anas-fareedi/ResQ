@@ -5,7 +5,7 @@ from datetime import datetime
 
 from models.database import get_db
 from models.rescue_report import RescueReport, RescueReportCreate
-from services.validator import ReportValidator
+from ML.services.validator import ReportValidator
 from schemas.report_schemas import (
     ReportSubmitRequest,
     BatchSyncRequest,
