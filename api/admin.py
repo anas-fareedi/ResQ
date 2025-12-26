@@ -11,6 +11,88 @@ from schemas.report_schemas import DashboardResponse, IncidentSummary, ReportRes
 router = APIRouter(prefix="/admin", tags=["admin"])
 validator = ReportValidator()
 
+
+@router.get("/reports/pending", response_model=List[ReportResponse])
+async def list_pending_reports(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """List reports waiting for NGO/admin verification."""
+    try:
+        query = (
+            select(RescueReport)
+            .where(RescueReport.is_verified == False)
+            .offset(skip)
+            .limit(limit)
+            .order_by(RescueReport.timestamp.desc())
+        )
+        reports = db.exec(query).all()
+        return [ReportResponse.from_orm(report) for report in reports]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch pending reports: {str(e)}"
+        )
+
+
+@router.put("/reports/{report_id}/verify", response_model=ReportResponse)
+async def admin_verify_report(
+    report_id: int,
+    db: Session = Depends(get_db)
+):
+    """Mark a report as verified (NGO/admin action)."""
+    try:
+        report = db.get(RescueReport, report_id)
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Report not found"
+            )
+
+        report.is_verified = True
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        return ReportResponse.from_orm(report)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to verify report: {str(e)}"
+        )
+
+
+@router.put("/reports/{report_id}/unverify", response_model=ReportResponse)
+async def admin_unverify_report(
+    report_id: int,
+    db: Session = Depends(get_db)
+):
+    """Mark a report as NOT verified (NGO/admin action)."""
+    try:
+        report = db.get(RescueReport, report_id)
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Report not found"
+            )
+
+        report.is_verified = False
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        return ReportResponse.from_orm(report)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unverify report: {str(e)}"
+        )
+
 @router.get("/dashboard", response_model=DashboardResponse)
 async def get_dashboard(db: Session = Depends(get_db)):
     """Get NGO dashboard with verified and clustered reports"""
