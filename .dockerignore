@@ -3,6 +3,8 @@ __pycache__
 *.pyc
 *.pyo
 *.pyd
+.env
+.env.*
 resq.db
 .pgdata
 .vscode
