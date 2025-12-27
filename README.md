@@ -1,13 +1,8 @@
-# ResQ
-Its disaster management and releif tool using croud sourcing 
-we have to manage this site for government , we had to take the data from the local government officials 
-through which we had easily collect the data
-we are making it as soon as possible
-## it is on hold for some time
-
 # RESQ Backend (FastAPI)
 
-Backend for RESQ: a disaster relief platform where victims submit disaster reports and NGOs manage rescue operations.
+Backend for RESQ: a disaster relief and management platform where victims submit disaster reports and NGOs manage rescue operations.
+croud sourcing, we have to manage this site for government , we had to take the data from the local government officials 
+through which we had easily collect the data
 
 ## Project Structure
 
@@ -16,7 +11,7 @@ Backend for RESQ: a disaster relief platform where victims submit disaster repor
 - `models/` - SQLModel DB models + DB session
 - `schemas/` - Pydantic request/response schemas
 - `services/` - validation + clustering service
-- `ml_logic/` - placeholder for future ML modules
+- `ML/` -    For ML modules
 
 ## Requirements
 
