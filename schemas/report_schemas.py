@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -55,6 +55,11 @@ class ReportResponse(BaseModel):
     is_verified: bool
     incident_id: Optional[str]
     timestamp: datetime
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def default_title(cls, v: Optional[str]) -> str:
+        return v or "Untitled incident"
     
     class Config:
         from_attributes = True

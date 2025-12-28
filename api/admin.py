@@ -116,6 +116,13 @@ async def get_dashboard(db: Session = Depends(get_db)):
         # Cluster verified reports
         clustered_reports = validator.cluster_reports_by_location(verified_reports)
         
+        # Persist incident IDs back to database
+        for incident_id, incident_reports in clustered_reports.items():
+            for report in incident_reports:
+                report.incident_id = incident_id
+                db.add(report)
+        db.commit()
+        
         # Create incident summaries
         incidents = []
         for incident_id, incident_reports in clustered_reports.items():

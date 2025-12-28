@@ -8,7 +8,7 @@ class RescueReportBase(SQLModel):
     disaster_type: str = Field(max_length=100)
     needs: List[str] = Field(default_factory=list, sa_column=Column(JSON))
     priority: int = Field(ge=1, le=5)
-    title: str = Field(max_length=200)
+    title: str = Field(max_length=200, nullable=False)
     description: Optional[str] = Field(default=None, max_length=1000)
     is_verified: bool = Field(default=False)
     incident_id: Optional[str] = Field(default=None, max_length=50)
