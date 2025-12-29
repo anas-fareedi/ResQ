@@ -119,30 +119,30 @@ async def sync_batch_reports(
             detail=f"Failed to sync reports: {str(e)}"
         )
 
-@router.get("/list", response_model=List[ReportResponse])
-async def list_reports(
-    skip: int = 0,
-    limit: int = 100,
-    verified_only: bool = False,
-    db: Session = Depends(get_db)
-):
-    """Get list of reports with optional filtering"""
-    try:
-        query = select(RescueReport)
+# @router.get("/list", response_model=List[ReportResponse])
+# async def list_reports(
+#     skip: int = 0,
+#     limit: int = 100,
+#     verified_only: bool = False,
+#     db: Session = Depends(get_db)
+# ):
+#     """Get list of reports with optional filtering"""
+#     try:
+#         query = select(RescueReport)
         
-        if verified_only:
-            query = query.where(RescueReport.is_verified == True)
+#         if verified_only:
+#             query = query.where(RescueReport.is_verified == True)
         
-        query = query.offset(skip).limit(limit).order_by(RescueReport.timestamp.desc())
+#         query = query.offset(skip).limit(limit).order_by(RescueReport.timestamp.desc())
         
-        reports = db.exec(query).all()
-        return [ReportResponse.from_orm(report) for report in reports]
+#         reports = db.exec(query).all()
+#         return [ReportResponse.from_orm(report) for report in reports]
         
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch reports: {str(e)}"
-        )
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Failed to fetch reports: {str(e)}"
+#         )
 
 @router.get("/{report_id}", response_model=ReportResponse)
 async def get_report(
@@ -168,32 +168,32 @@ async def get_report(
             detail=f"Failed to fetch report: {str(e)}"
         )
 
-@router.put("/{report_id}/verify", response_model=ReportResponse)
-async def verify_report(
-    report_id: int,
-    db: Session = Depends(get_db)
-):
-    """Manually verify a report"""
-    try:
-        report = db.get(RescueReport, report_id)
-        if not report:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Report not found"
-            )
+# @router.put("/{report_id}/verify", response_model=ReportResponse)
+# async def verify_report(
+#     report_id: int,
+#     db: Session = Depends(get_db)
+# ):
+#     """Manually verify a report"""
+#     try:
+#         report = db.get(RescueReport, report_id)
+#         if not report:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Report not found"
+#             )
         
-        report.is_verified = True
-        db.add(report)
-        db.commit()
-        db.refresh(report)
+#         report.is_verified = True
+#         db.add(report)
+#         db.commit()
+#         db.refresh(report)
         
-        return ReportResponse.from_orm(report)
+    #     return ReportResponse.from_orm(report)
         
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to verify report: {str(e)}"
-        )
+    # except HTTPException:
+    #     raise
+    # except Exception as e:
+    #     db.rollback()
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail=f"Failed to verify report: {str(e)}"
+    #     )
