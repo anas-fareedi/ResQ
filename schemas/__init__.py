@@ -8,7 +8,6 @@ from .report_schemas import (
     ValidationResponse,
     ErrorResponse
 )
-
 __all__ = [
     "ReportSubmitRequest",
     "BatchSyncRequest", 

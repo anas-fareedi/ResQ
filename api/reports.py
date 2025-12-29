@@ -36,18 +36,14 @@ async def submit_report(
             description=report_data.description
         )
         
-        # Validate report authenticity
         validation_result = validator.validate_report_authenticity(report)
         
-        # Auto-verify if likely authentic
         if validation_result["is_likely_authentic"]:
             report.is_verified = True
         
-        # Save to database
         db.add(report)
         db.commit()
         db.refresh(report)
-        
         return ReportResponse.from_orm(report)
         
     except Exception as e:
@@ -65,7 +61,6 @@ async def sync_batch_reports(
     """Sync multiple reports for offline-first functionality"""
     try:
         created_reports = []
-        
         # Process each report in the batch
         for report_data in batch_data.reports:
             report = RescueReport(
@@ -77,7 +72,6 @@ async def sync_batch_reports(
                 title=report_data.title,
                 description=report_data.description
             )
-            
             # Validate report authenticity
             validation_result = validator.validate_report_authenticity(report)
             if validation_result["is_likely_authentic"]:
@@ -85,15 +79,11 @@ async def sync_batch_reports(
             
             db.add(report)
             created_reports.append(report)
-        
-        # Commit all reports
         db.commit()
         
-        # Refresh all reports to get their IDs
         for report in created_reports:
             db.refresh(report)
-        
-        # Process batch clustering
+
         batch_result = validator.process_batch_reports(created_reports)
         
         # Update incident IDs for clustered reports
@@ -101,7 +91,6 @@ async def sync_batch_reports(
             for report in incident_reports:
                 report.incident_id = incident_id
                 db.add(report)
-        
         db.commit()
         
         return BatchSyncResponse(
@@ -119,31 +108,6 @@ async def sync_batch_reports(
             detail=f"Failed to sync reports: {str(e)}"
         )
 
-# @router.get("/list", response_model=List[ReportResponse])
-# async def list_reports(
-#     skip: int = 0,
-#     limit: int = 100,
-#     verified_only: bool = False,
-#     db: Session = Depends(get_db)
-# ):
-#     """Get list of reports with optional filtering"""
-#     try:
-#         query = select(RescueReport)
-        
-#         if verified_only:
-#             query = query.where(RescueReport.is_verified == True)
-        
-#         query = query.offset(skip).limit(limit).order_by(RescueReport.timestamp.desc())
-        
-#         reports = db.exec(query).all()
-#         return [ReportResponse.from_orm(report) for report in reports]
-        
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Failed to fetch reports: {str(e)}"
-#         )
-
 @router.get("/{report_id}", response_model=ReportResponse)
 async def get_report(
     report_id: int,
@@ -157,7 +121,6 @@ async def get_report(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Report not found"
             )
-        
         return ReportResponse.from_orm(report)
         
     except HTTPException:
@@ -167,33 +130,3 @@ async def get_report(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch report: {str(e)}"
         )
-
-# @router.put("/{report_id}/verify", response_model=ReportResponse)
-# async def verify_report(
-#     report_id: int,
-#     db: Session = Depends(get_db)
-# ):
-#     """Manually verify a report"""
-#     try:
-#         report = db.get(RescueReport, report_id)
-#         if not report:
-#             raise HTTPException(
-#                 status_code=status.HTTP_404_NOT_FOUND,
-#                 detail="Report not found"
-#             )
-        
-#         report.is_verified = True
-#         db.add(report)
-#         db.commit()
-#         db.refresh(report)
-        
-    #     return ReportResponse.from_orm(report)
-        
-    # except HTTPException:
-    #     raise
-    # except Exception as e:
-    #     db.rollback()
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"Failed to verify report: {str(e)}"
-    #     )

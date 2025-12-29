@@ -11,7 +11,6 @@ from api import reports_router, admin_router
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
 app = FastAPI(
     title="RESQ - Disaster Relief Platform",
     description="A high-performance backend for disaster relief operations where victims report disasters and NGOs manage rescue operations",
@@ -24,16 +23,14 @@ app = FastAPI(
     }
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(reports_router)
 app.include_router(admin_router)
 
@@ -46,7 +43,6 @@ async def global_exception_handler(request, exc):
         content={"detail": "Internal server error occurred"}
     )
 
-# Health check endpoint
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

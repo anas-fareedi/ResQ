@@ -11,7 +11,6 @@ from schemas.report_schemas import DashboardResponse, IncidentSummary, ReportRes
 router = APIRouter(prefix="/admin", tags=["admin"])
 validator = ReportValidator()
 
-
 @router.get("/reports/pending", response_model=List[ReportResponse])
 async def list_pending_reports(
     skip: int = 0,
@@ -35,13 +34,13 @@ async def list_pending_reports(
             detail=f"Failed to fetch pending reports: {str(e)}"
         )
 
-
-@router.put("/reports/{report_id}/verify", response_model=ReportResponse)
-async def admin_verify_report(
+@router.put("/reports/{report_id}/verification-status", response_model=ReportResponse)
+async def update_report_verification_status(
     report_id: int,
+    is_verified: bool,
     db: Session = Depends(get_db)
 ):
-    """Mark a report as verified (NGO/admin action)."""
+    """Update report verification status (verified or unverified)."""
     try:
         report = db.get(RescueReport, report_id)
         if not report:
@@ -50,7 +49,7 @@ async def admin_verify_report(
                 detail="Report not found"
             )
 
-        report.is_verified = True
+        report.is_verified = is_verified
         db.add(report)
         db.commit()
         db.refresh(report)
@@ -61,43 +60,13 @@ async def admin_verify_report(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to verify report: {str(e)}"
-        )
-
-
-@router.put("/reports/{report_id}/unverify", response_model=ReportResponse)
-async def admin_unverify_report(
-    report_id: int,
-    db: Session = Depends(get_db)
-):
-    """Mark a report as NOT verified (NGO/admin action)."""
-    try:
-        report = db.get(RescueReport, report_id)
-        if not report:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Report not found"
-            )
-
-        report.is_verified = False
-        db.add(report)
-        db.commit()
-        db.refresh(report)
-        return ReportResponse.from_orm(report)
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to unverify report: {str(e)}"
+            detail=f"Failed to update report verification status: {str(e)}"
         )
 
 @router.get("/dashboard", response_model=DashboardResponse)
 async def get_dashboard(db: Session = Depends(get_db)):
     """Get NGO dashboard with verified and clustered reports"""
     try:
-        # Get all verified reports
         verified_reports_query = select(RescueReport).where(RescueReport.is_verified == True)
         verified_reports = db.exec(verified_reports_query).all()
         
@@ -113,20 +82,16 @@ async def get_dashboard(db: Session = Depends(get_db)):
                 pending_verification=len(all_reports)
             )
         
-        # Cluster verified reports
         clustered_reports = validator.cluster_reports_by_location(verified_reports)
         
-        # Persist incident IDs back to database
         for incident_id, incident_reports in clustered_reports.items():
             for report in incident_reports:
                 report.incident_id = incident_id
                 db.add(report)
         db.commit()
         
-        # Create incident summaries
         incidents = []
         for incident_id, incident_reports in clustered_reports.items():
-            # Calculate aggregated data for the incident
             priorities = [r.priority for r in incident_reports]
             disaster_types = list(set([r.disaster_type for r in incident_reports]))
             
@@ -145,10 +110,9 @@ async def get_dashboard(db: Session = Depends(get_db)):
             )
             incidents.append(incident)
         
-        # Sort incidents by priority (descending) and then by timestamp
         incidents.sort(key=lambda x: (-x.priority, max(r.timestamp for r in x.reports)))
         
-        # Calculate statistics
+        # statistics
         total_verified = len(verified_reports)
         total_pending = len([r for r in all_reports if not r.is_verified])
         
@@ -173,7 +137,6 @@ async def get_incident_details(
 ):
     """Get detailed information about a specific incident"""
     try:
-        # Get all reports for this incident
         reports_query = select(RescueReport).where(
             RescueReport.incident_id == incident_id,
             RescueReport.is_verified == True
@@ -185,12 +148,9 @@ async def get_incident_details(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Incident not found"
             )
-        
-        # Calculate incident summary
         priorities = [r.priority for r in incident_reports]
         disaster_types = list(set([r.disaster_type for r in incident_reports]))
         
-        # Calculate center location
         avg_lat = sum(r.location_lat for r in incident_reports) / len(incident_reports)
         avg_lng = sum(r.location_lng for r in incident_reports) / len(incident_reports)
         
@@ -203,7 +163,6 @@ async def get_incident_details(
             location={"lat": avg_lat, "lng": avg_lng},
             reports=[ReportResponse.from_orm(report) for report in incident_reports]
         )
-        
     except HTTPException:
         raise
     except Exception as e:
@@ -216,17 +175,14 @@ async def get_incident_details(
 async def get_statistics(db: Session = Depends(get_db)):
     """Get overall statistics for the platform"""
     try:
-        # Basic counts
         total_reports = len(db.exec(select(RescueReport)).all())
         verified_reports = len(db.exec(select(RescueReport).where(RescueReport.is_verified == True)).all())
         
-        # Disaster type breakdown
         disaster_type_counts = db.exec(
             select(RescueReport.disaster_type, func.count(RescueReport.id))
             .group_by(RescueReport.disaster_type)
         ).all()
         
-        # Priority breakdown
         priority_counts = db.exec(
             select(RescueReport.priority, func.count(RescueReport.id))
             .where(RescueReport.is_verified == True)
@@ -249,7 +205,6 @@ async def get_statistics(db: Session = Depends(get_db)):
             "priority_breakdown": dict(priority_counts),
             "recent_reports_24h": recent_reports
         }
-        
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
