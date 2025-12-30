@@ -1,6 +1,6 @@
 # RESQ Backend (FastAPI)
 
-Backend for RESQ: a disaster relief and management platform where victims submit disaster reports and NGOs manage rescue operations.
+RESQ: a disaster relief and management platform where victims submit disaster reports and NGOs manage rescue operations.
 croud sourcing, we have to manage this site for government , we had to take the data from the local government officials 
 through which we had easily collect the data
 
