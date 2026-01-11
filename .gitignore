@@ -1,0 +1,8 @@
+# model weights
+*.safetensors
+*.pt
+*.bin
+
+# datasets
+raw/
+data/
