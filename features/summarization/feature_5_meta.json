@@ -1,0 +1,12 @@
+{
+  "feature_name": "GenAI Summarization",
+  "feature_id": 5,
+  "type": "extractive_nlp",
+  "model": "distilbert-base-uncased (encoder)",
+  "training": false,
+  "status": "frozen",
+  "inputs": ["message"],
+  "outputs": ["summary"],
+  "hallucination_risk": "none",
+  "notes": "Summarization runs only on validated messages"
+}
